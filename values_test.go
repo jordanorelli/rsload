@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -10,7 +11,7 @@ type valueTest struct {
 }
 
 func (test valueTest) run(t *testing.T) {
-	v, err := readValue([]byte(test.in))
+	v, err := readValue(strings.NewReader(test.in + "\r\n"))
 	if err != nil {
 		t.Errorf("valueTest error: %v", err)
 	}

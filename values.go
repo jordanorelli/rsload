@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -17,19 +19,37 @@ var (
 type value interface {
 }
 
-func readValue(b []byte) (value, error) {
-	if len(b) < 2 {
+func readValue(r io.Reader) (value, error) {
+	br := bufio.NewReader(r)
+	line, err := br.ReadBytes('\n')
+	switch err {
+	case io.EOF:
+		if line != nil {
+			break
+		}
+		return nil, err
+	case nil:
+		break
+	default:
+		return nil, fmt.Errorf("unable to read value in redis protocol: %v")
+	}
+
+	if len(line) < 3 {
 		return nil, fmt.Errorf("unable to read redis protocol value: input is too small")
 	}
-	switch b[0] {
+	if line[len(line)-2] != '\r' {
+		return nil, fmt.Errorf("unable to read redis protocol value: bad line terminator")
+	}
+	line = line[:len(line)-2]
+	switch line[0] {
 	case start_string:
-		return readString(b[1:])
+		return readString(line[1:])
 	case start_error:
-		return readError(b[1:])
+		return readError(line[1:])
 	case start_integer:
-		return readInteger(b[1:])
+		return readInteger(line[1:])
 	default:
-		return nil, fmt.Errorf("unable to read redis protocol value: illegal start character: %c", b[0])
+		return nil, fmt.Errorf("unable to read redis protocol value: illegal start character: %c", line[0])
 	}
 }
 
