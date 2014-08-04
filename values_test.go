@@ -31,6 +31,11 @@ var valueTests = []valueTest{
 	{"-one two ", Error("one two ")}, // trailing space
 	{"- one two", Error(" one two")}, // leading space
 
+	{"$0\r\n\r\n", BulkString("")}, // is this even a thing?
+	{"$1\r\nx\r\n", BulkString("x")},
+	{"$4\r\netsy\r\n", BulkString("etsy")},
+	{"$12\r\nSaskatchewan\r\n", BulkString("Saskatchewan")},
+
 	{":0", Integer(0)},
 	{":1", Integer(1)},
 	{":-1", Integer(-1)},
