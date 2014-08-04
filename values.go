@@ -32,19 +32,21 @@ func readValue(b []byte) (value, error) {
 
 // ------------------------------------------------------------------------------
 
-type simpleString string
+type String string
 
 func readString(b []byte) (value, error) {
-	return simpleString(strings.Trim(string(b), "\r\n")), nil
+	return String(strings.Trim(string(b), "\r\n")), nil
 }
 
 // ------------------------------------------------------------------------------
 
-type redisError string
+type Error string
 
 func readError(b []byte) (value, error) {
-    return redisError(strings.Trim(string(b), "\r\n")), nil
+    return Error(strings.Trim(string(b), "\r\n")), nil
 }
+
+
 
 
 

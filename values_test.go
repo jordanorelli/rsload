@@ -8,15 +8,15 @@ var valueTests = []struct {
 	in  string
 	out value
 }{
-	{"+hello", simpleString("hello")},
-	{"+one two", simpleString("one two")},   // intermediate space
-	{"+one two ", simpleString("one two ")}, // trailing space
-	{"+ one two", simpleString(" one two")}, // leading space
+	{"+hello", String("hello")},
+	{"+one two", String("one two")},   // intermediate space
+	{"+one two ", String("one two ")}, // trailing space
+	{"+ one two", String(" one two")}, // leading space
 
-	{"-hello", redisError("hello")},
-	{"-one two", redisError("one two")},   // intermediate space
-	{"-one two ", redisError("one two ")}, // trailing space
-	{"- one two", redisError(" one two")}, // leading space
+	{"-hello", Error("hello")},
+	{"-one two", Error("one two")},   // intermediate space
+	{"-one two ", Error("one two ")}, // trailing space
+	{"- one two", Error(" one two")}, // leading space
 }
 
 func TestValues(t *testing.T) {
