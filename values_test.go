@@ -79,6 +79,7 @@ var valueTests = []valueTest{
 	{":9223372036854775807\r\n+extra\r\n", Integer(9223372036854775807)},   // int64 max
 	{":-9223372036854775808\r\n+extra\r\n", Integer(-9223372036854775808)}, // int64 min
 
+	{"*-1\r\n", nil},    // nil array
 	{"*0\r\n", Array{}}, // is this a thing?  I have no idea.
 	{"*1\r\n+hello\r\n", Array{String("hello")}},
 	{"*2\r\n+one\r\n+two", Array{String("one"), String("two")}},

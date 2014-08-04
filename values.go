@@ -101,9 +101,13 @@ func readBulkString(prefix []byte, r io.Reader) (value, error) {
 		return nil, fmt.Errorf("unable to read bulkstring in redis protocol: bad prefix: %v", err)
 	}
 
-	if n == -1 {
+	switch {
+	case n == -1:
 		return nil, nil
+	case n < 0:
+		return nil, fmt.Errorf("redis protocol error: illegal bulk string of negative length %d", n)
 	}
+
 	n += 2
 	b := make([]byte, n)
 	n_read, err := r.Read(b)
@@ -133,6 +137,13 @@ func readArray(prefix []byte, r *bufio.Reader) (value, error) {
 	n, err := strconv.ParseInt(string(prefix), 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read array in redis protocol: bad prefix: %v", err)
+	}
+
+	switch {
+	case n == -1:
+		return nil, nil
+	case n < 0:
+		return nil, fmt.Errorf("redis protocol error: illegal array of negative length %d", n)
 	}
 
 	a := make(Array, n)
