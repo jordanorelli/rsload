@@ -101,6 +101,9 @@ func readBulkString(prefix []byte, r io.Reader) (value, error) {
 		return nil, fmt.Errorf("unable to read bulkstring in redis protocol: bad prefix: %v", err)
 	}
 
+	if n == -1 {
+		return nil, nil
+	}
 	n += 2
 	b := make([]byte, n)
 	n_read, err := r.Read(b)

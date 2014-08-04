@@ -47,6 +47,7 @@ var valueTests = []valueTest{
 	{"-one two ", Error("one two ")}, // trailing space
 	{"- one two", Error(" one two")}, // leading space
 
+	{"$-1\r\n", nil},
 	{"$0\r\n\r\n", BulkString("")}, // is this even a thing?
 	{"$1\r\nx\r\n", BulkString("x")},
 	{"$4\r\netsy\r\n", BulkString("etsy")},
