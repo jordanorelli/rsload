@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"strings"
 )
 
 var (
@@ -48,6 +47,8 @@ func readValue(r io.Reader) (value, error) {
 		return readError(line[1:])
 	case start_integer:
 		return readInteger(line[1:])
+	case start_bulkstring:
+		return readBulkString(line[1:], r)
 	default:
 		return nil, fmt.Errorf("unable to read redis protocol value: illegal start character: %c", line[0])
 	}
@@ -58,7 +59,7 @@ func readValue(r io.Reader) (value, error) {
 type String string
 
 func readString(b []byte) (value, error) {
-	return String(strings.Trim(string(b), "\r\n")), nil
+	return String(b), nil
 }
 
 // ------------------------------------------------------------------------------
@@ -66,7 +67,7 @@ func readString(b []byte) (value, error) {
 type Error string
 
 func readError(b []byte) (value, error) {
-	return Error(strings.Trim(string(b), "\r\n")), nil
+	return Error(b), nil
 }
 
 // ------------------------------------------------------------------------------
@@ -74,9 +75,17 @@ func readError(b []byte) (value, error) {
 type Integer int64
 
 func readInteger(b []byte) (value, error) {
-	i, err := strconv.ParseInt(strings.Trim(string(b), "\r\n"), 10, 64)
+	i, err := strconv.ParseInt(string(b), 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read integer in redis protocol format: %v", err)
 	}
 	return Integer(i), nil
+}
+
+// -----------------------------------------------------------------------------------------
+
+type BulkString string
+
+func readBulkString(prefix []byte, r io.Reader) (value, error) {
+	return nil, nil
 }
