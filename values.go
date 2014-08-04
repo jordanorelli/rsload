@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -23,8 +24,10 @@ func readValue(b []byte) (value, error) {
 	switch b[0] {
 	case start_string:
 		return readString(b[1:])
-    case start_error:
-        return readError(b[1:])
+	case start_error:
+		return readError(b[1:])
+	case start_integer:
+		return readInteger(b[1:])
 	default:
 		return nil, fmt.Errorf("unable to read redis protocol value: illegal start character: %c", b[0])
 	}
@@ -43,15 +46,17 @@ func readString(b []byte) (value, error) {
 type Error string
 
 func readError(b []byte) (value, error) {
-    return Error(strings.Trim(string(b), "\r\n")), nil
+	return Error(strings.Trim(string(b), "\r\n")), nil
 }
 
+// ------------------------------------------------------------------------------
 
+type Integer int64
 
-
-
-
-
-
-
-
+func readInteger(b []byte) (value, error) {
+	i, err := strconv.ParseInt(strings.Trim(string(b), "\r\n"), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read integer in redis protocol format: %v", err)
+	}
+	return Integer(i), nil
+}
