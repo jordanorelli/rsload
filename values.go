@@ -16,8 +16,6 @@ var (
 type value interface {
 }
 
-type simpleString string
-
 func readValue(b []byte) (value, error) {
 	if len(b) < 2 {
 		return nil, fmt.Errorf("unable to read redis protocol value: input is too small")
@@ -25,11 +23,33 @@ func readValue(b []byte) (value, error) {
 	switch b[0] {
 	case start_string:
 		return readString(b[1:])
+    case start_error:
+        return readError(b[1:])
 	default:
 		return nil, fmt.Errorf("unable to read redis protocol value: illegal start character: %c", b[0])
 	}
 }
 
+// ------------------------------------------------------------------------------
+
+type simpleString string
+
 func readString(b []byte) (value, error) {
 	return simpleString(strings.Trim(string(b), "\r\n")), nil
 }
+
+// ------------------------------------------------------------------------------
+
+type redisError string
+
+func readError(b []byte) (value, error) {
+    return redisError(strings.Trim(string(b), "\r\n")), nil
+}
+
+
+
+
+
+
+
+
