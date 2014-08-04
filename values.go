@@ -18,6 +18,24 @@ var (
 type value interface {
 }
 
+func streamValues(r io.Reader, c chan value, e chan error) {
+	defer close(c)
+	defer close(e)
+
+	r = bufio.NewReader(r)
+	for {
+		v, err := readValue(r)
+		switch err {
+		case io.EOF:
+			return
+		case nil:
+			c <- v
+		default:
+			e <- err
+		}
+	}
+}
+
 func readValue(r io.Reader) (value, error) {
 	var br *bufio.Reader
 	switch t := r.(type) {
@@ -44,7 +62,7 @@ func readValue(r io.Reader) (value, error) {
 		return nil, fmt.Errorf("unable to read redis protocol value: input %q is too small", line)
 	}
 	if line[len(line)-2] != '\r' {
-		return nil, fmt.Errorf("unable to read redis protocol value: bad line terminator")
+		return nil, fmt.Errorf("unable to read redis protocol value: bad line terminator: %q", line)
 	}
 	line = line[:len(line)-2]
 	switch line[0] {
