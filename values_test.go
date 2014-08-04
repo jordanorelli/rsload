@@ -4,10 +4,22 @@ import (
 	"testing"
 )
 
-var valueTests = []struct {
+type valueTest struct {
 	in  string
 	out value
-}{
+}
+
+func (test valueTest) run(t *testing.T) {
+	v, err := readValue([]byte(test.in))
+	if err != nil {
+		t.Errorf("valueTest error: %v", err)
+	}
+	if v != test.out {
+		t.Errorf("expected %v, got %v", test.out, v)
+	}
+}
+
+var valueTests = []valueTest{
 	{"+hello", String("hello")},
 	{"+one two", String("one two")},   // intermediate space
 	{"+one two ", String("one two ")}, // trailing space
@@ -29,12 +41,6 @@ var valueTests = []struct {
 
 func TestValues(t *testing.T) {
 	for _, test := range valueTests {
-		v, err := readValue([]byte(test.in))
-		if err != nil {
-			t.Errorf("failed value test: %v", err)
-		}
-		if v != test.out {
-			t.Errorf("expected %v, got %v", test.out, v)
-		}
+		test.run(t)
 	}
 }
