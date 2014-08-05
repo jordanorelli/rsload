@@ -12,8 +12,9 @@ import (
 )
 
 var options struct {
-	host string
-	port int
+	host     string
+	port     int
+	password string
 }
 
 func usage(status int) {
@@ -44,6 +45,10 @@ func main() {
 		os.Exit(1)
 	}
 	defer conn.Close()
+
+	if options.password != "" {
+		fmt.Fprintf(conn, "*2\r\n$4\r\nauth\r\n$%d\r\n%s\r\n", len(options.password), options.password)
+	}
 
 	f, err := os.Open(fname)
 	if err != nil {
@@ -85,6 +90,7 @@ func main() {
 func init() {
 	flag.StringVar(&options.host, "h", "127.0.0.1", "hostname")
 	flag.IntVar(&options.port, "p", 6379, "port")
+	flag.StringVar(&options.password, "a", "", "password")
 }
 
 /*
