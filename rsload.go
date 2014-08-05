@@ -11,10 +11,10 @@ import (
 	"strings"
 )
 
-var (
-	host = "localhost"
-	port = 6379
-)
+var options struct {
+	host string
+	port int
+}
 
 func usage(status int) {
 	fmt.Println("usage: rsload [filename]")
@@ -38,7 +38,7 @@ func main() {
 	}
 	fname := args[0]
 
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", options.host, options.port))
 	if err != nil {
 		fmt.Printf("unable to connect to redis: %v\n", err)
 		os.Exit(1)
@@ -81,3 +81,34 @@ func main() {
 		}
 	}
 }
+
+func init() {
+	flag.StringVar(&options.host, "h", "127.0.0.1", "hostname")
+	flag.IntVar(&options.port, "p", 6379, "port")
+}
+
+/*
+  -h <hostname>     Server hostname (default: 127.0.0.1)
+  -p <port>         Server port (default: 6379)
+  -s <socket>       Server socket (overrides hostname and port)
+  -a <password>     Password to use when connecting to the server
+  -r <repeat>       Execute specified command N times
+  -i <interval>     When -r is used, waits <interval> seconds per command.
+                    It is possible to specify sub-second times like -i 0.1
+  -n <db>           Database number
+  -x                Read last argument from STDIN
+  -d <delimiter>    Multi-bulk delimiter in for raw formatting (default: \n)
+  -c                Enable cluster mode (follow -ASK and -MOVED redirections)
+  --raw             Use raw formatting for replies (default when STDOUT is
+                    not a tty)
+  --latency         Enter a special mode continuously sampling latency
+  --latency-history Like --latency but tracking latency changes over time.
+                    Default time interval is 15 sec. Change it using -i.
+  --slave           Simulate a slave showing commands received from the master
+  --rdb <filename>  Transfer an RDB dump from remote server to local file.
+  --pipe            Transfer raw Redis protocol from stdin to server
+  --bigkeys         Sample Redis keys looking for big keys
+  --eval <file>     Send an EVAL command using the Lua script at <file>
+  --help            Output this help and exit
+  --version         Output version and exit
+*/
