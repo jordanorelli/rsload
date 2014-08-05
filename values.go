@@ -16,6 +16,7 @@ var (
 )
 
 type value interface {
+	Write(io.Writer) (int, error)
 }
 
 func streamValues(r io.Reader, c chan value, e chan error) {
@@ -33,6 +34,12 @@ func streamValues(r io.Reader, c chan value, e chan error) {
 		default:
 			e <- err
 		}
+	}
+}
+
+func writeValues(w io.Writer, c chan value) {
+	for v := range c {
+		v.Write(w)
 	}
 }
 
@@ -89,12 +96,20 @@ func readString(b []byte) (value, error) {
 	return String(b), nil
 }
 
+func (s String) Write(w io.Writer) (int, error) {
+	return fmt.Fprintf(w, "+%s\r\n", s)
+}
+
 // ------------------------------------------------------------------------------
 
 type Error string
 
 func readError(b []byte) (value, error) {
 	return Error(b), nil
+}
+
+func (e Error) Write(w io.Writer) (int, error) {
+	return fmt.Fprintf(w, "-%s\r\n")
 }
 
 // ------------------------------------------------------------------------------
@@ -107,6 +122,10 @@ func readInteger(b []byte) (value, error) {
 		return nil, fmt.Errorf("unable to read integer in redis protocol format: %v", err)
 	}
 	return Integer(i), nil
+}
+
+func (i Integer) Write(w io.Writer) (int, error) {
+	return fmt.Fprintf(w, ":%d\r\n", i)
 }
 
 // ------------------------------------------------------------------------------
@@ -147,6 +166,10 @@ func readBulkString(prefix []byte, r io.Reader) (value, error) {
 	return BulkString(b[:len(b)-2]), nil
 }
 
+func (s BulkString) Write(w io.Writer) (int, error) {
+	return fmt.Fprintf(w, "$%d\r\n%s\r\n", len(s), s)
+}
+
 // -----------------------------------------------------------------------------------------
 
 type Array []value
@@ -173,4 +196,24 @@ func readArray(prefix []byte, r *bufio.Reader) (value, error) {
 		a[i] = v
 	}
 	return a, nil
+}
+
+func (a Array) Write(w io.Writer) (int, error) {
+	n, err := fmt.Fprintf(w, "*%d\r\n", len(a))
+	if err != nil {
+		return n, err
+	}
+
+	var (
+		nn int
+		e  error
+	)
+	for i := 0; i < len(a); i++ {
+		nn, e = a[i].Write(w)
+		n += nn
+		if e != nil {
+			return n, e
+		}
+	}
+	return n, nil
 }

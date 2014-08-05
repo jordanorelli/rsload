@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bufio"
+	// "bufio"
 	"flag"
 	"fmt"
-	"io"
+	// "io"
 	"math/rand"
 	"net"
 	"os"
-	"strings"
+	// "strings"
 )
 
 var options struct {
@@ -50,39 +50,56 @@ func main() {
 		fmt.Fprintf(conn, "*2\r\n$4\r\nauth\r\n$%d\r\n%s\r\n", len(options.password), options.password)
 	}
 
-	f, err := os.Open(fname)
+	infile, err := os.Open(fname)
 	if err != nil {
 		fmt.Printf("unable to open file %s: %v\n", fname, err)
 		os.Exit(1)
 	}
-	defer f.Close()
+	defer infile.Close()
 
-	c := make(chan statement)
-	go split(f, c)
-
-	s := randomString(32)
+	c, e := make(chan value), make(chan error)
+	sent := make(chan value, 1)
+	go streamValues(infile, c, e)
 	go func() {
-		for s := range c {
-			if err := s.write(conn); err != nil {
+		for {
+			select {
+			case v, ok := <-c:
+				if !ok {
+					return
+				}
+				v.Write(conn)
+				sent <- v
+			case err, ok := <-e:
+				if !ok {
+					return
+				}
 				fmt.Println(err)
-				break
 			}
 		}
-		fmt.Fprintf(conn, "*2\r\n$4\r\necho\r\n$32\r\n%s\r\n", s)
 	}()
 
-	r := bufio.NewReader(conn)
+	type pair struct {
+		request  value
+		response value
+	}
+
+	cc, ee := make(chan value), make(chan error)
+	go streamValues(conn, cc, ee)
+ReadResponses:
 	for {
-		line, err := r.ReadString('\n')
-		switch err {
-		case nil:
-			if strings.TrimSpace(line) == s {
-				return
+		select {
+		case response, ok := <-cc:
+			if !ok {
+				break ReadResponses
 			}
-		case io.EOF:
-			return
-		default:
-			fmt.Println(err)
+			request := <-sent
+			fmt.Println(pair{request, response})
+		case err, ok := <-ee:
+			if !ok {
+				break ReadResponses
+			}
+			request := <-sent
+			fmt.Printf("fuck %v %v\n", request, err)
 		}
 	}
 }
