@@ -48,6 +48,15 @@ func main() {
 
 	if options.password != "" {
 		fmt.Fprintf(conn, "*2\r\n$4\r\nauth\r\n$%d\r\n%s\r\n", len(options.password), options.password)
+		v, err := readValue(conn)
+		if err != nil {
+			fmt.Printf("unable to auth: %v\n", err)
+			os.Exit(1)
+		}
+		if !isOK(v) {
+			fmt.Printf("not OK: %v\n", v)
+			os.Exit(1)
+		}
 	}
 
 	infile, err := os.Open(fname)

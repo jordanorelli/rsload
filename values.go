@@ -19,6 +19,14 @@ type value interface {
 	Write(io.Writer) (int, error)
 }
 
+func isOK(v value) bool {
+	vv, ok := v.(String)
+	if !ok {
+		return false
+	}
+	return vv == "OK"
+}
+
 func streamValues(r io.Reader, c chan value, e chan error) {
 	defer close(c)
 	defer close(e)
