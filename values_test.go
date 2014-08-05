@@ -130,15 +130,24 @@ func (s streamTest) run(t *testing.T) {
 	c, e := make(chan value), make(chan error)
 	r := strings.NewReader(s[0].(string))
 	go streamValues(r, c, e)
-	for i := 1; i < len(s); i++ {
+	count := 1
+	for {
 		select {
-		case v := <-c:
-			if !eq(s[i], v) {
-				t.Errorf("expected %v, got %v", s[i], v)
+		case v, ok := <-c:
+			if !ok {
+				return
 			}
-		case err := <-e:
+			if !eq(s[count], v) {
+				t.Errorf("expected %q, got %q", s[count], v)
+			}
+		case err, ok := <-e:
+			if !ok {
+				return
+			}
 			t.Error(err)
+			return
 		}
+		count++
 	}
 }
 

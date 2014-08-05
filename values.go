@@ -48,7 +48,7 @@ func readValue(r io.Reader) (value, error) {
 	line, err := br.ReadBytes('\n')
 	switch err {
 	case io.EOF:
-		if line != nil {
+		if line != nil && len(line) > 0 {
 			break
 		}
 		return nil, err
@@ -109,7 +109,7 @@ func readInteger(b []byte) (value, error) {
 	return Integer(i), nil
 }
 
-// -----------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type BulkString string
 
