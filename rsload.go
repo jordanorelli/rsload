@@ -12,6 +12,7 @@ var options struct {
 	host     string
 	port     int
 	password string
+	buffer   int
 }
 
 func usage(status int) {
@@ -64,7 +65,7 @@ func main() {
 	defer infile.Close()
 
 	c := make(chan maybe)
-	sent := make(chan value)
+	sent := make(chan value, options.buffer)
 	go streamValues(infile, c)
 	go func() {
 		defer func() {
@@ -107,6 +108,7 @@ func init() {
 	flag.StringVar(&options.host, "h", "127.0.0.1", "hostname")
 	flag.IntVar(&options.port, "p", 6379, "port")
 	flag.StringVar(&options.password, "a", "", "password")
+	flag.IntVar(&options.buffer, "buffer", 0, "number of outstanding statements allowed before throttling")
 }
 
 /*
