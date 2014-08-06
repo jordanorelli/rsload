@@ -19,8 +19,25 @@ type value interface {
 	Write(io.Writer) (int, error)
 }
 
+type maybe struct {
+	value
+	error
+}
+
+func (m maybe) err() error {
+	return m.error
+}
+
+func (m maybe) ok() bool {
+	return m.error == nil
+}
+
+func (m maybe) val() value {
+	return m.value
+}
+
 func auth(password string) value {
-    return Array{BulkString("auth"), BulkString(password)}
+	return Array{BulkString("auth"), BulkString(password)}
 }
 
 func isOK(v value) bool {
@@ -31,9 +48,8 @@ func isOK(v value) bool {
 	return vv == "OK"
 }
 
-func streamValues(r io.Reader, c chan value, e chan error) {
+func streamValues(r io.Reader, c chan maybe) {
 	defer close(c)
-	defer close(e)
 
 	r = bufio.NewReader(r)
 	for {
@@ -42,9 +58,9 @@ func streamValues(r io.Reader, c chan value, e chan error) {
 		case io.EOF:
 			return
 		case nil:
-			c <- v
+			c <- maybe{value: v}
 		default:
-			e <- err
+			c <- maybe{error: err}
 		}
 	}
 }

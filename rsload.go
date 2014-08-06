@@ -47,8 +47,7 @@ func main() {
 	defer conn.Close()
 
 	if options.password != "" {
-        auth(options.password).Write(conn)
-		// fmt.Fprintf(conn, "*2\r\n$4\r\nauth\r\n$%d\r\n%s\r\n", len(options.password), options.password)
+		auth(options.password).Write(conn)
 		v, err := readValue(conn)
 		if err != nil {
 			fmt.Printf("unable to auth: %v\n", err)
@@ -67,49 +66,30 @@ func main() {
 	}
 	defer infile.Close()
 
-	c, e := make(chan value), make(chan error)
+	c := make(chan maybe)
 	sent := make(chan value)
-	go streamValues(infile, c, e)
+	go streamValues(infile, c)
 	go func() {
-		for {
-			select {
-			case v, ok := <-c:
-				if !ok {
-					return
-				}
-				v.Write(conn)
-				sent <- v
-			case err, ok := <-e:
-				if !ok {
-					return
-				}
-				fmt.Println(err)
+		defer close(sent)
+		for r := range c {
+			if r.ok() {
+				r.val().Write(conn)
+				sent <- r.val()
+			} else {
+				// this bad
+				fmt.Println(r.err())
 			}
 		}
 	}()
 
-	type pair struct {
-		request  value
-		response value
-	}
-
-	cc, ee := make(chan value), make(chan error)
-	go streamValues(conn, cc, ee)
-ReadResponses:
-	for {
-		select {
-		case response, ok := <-cc:
-			if !ok {
-				break ReadResponses
-			}
-			request := <-sent
-			fmt.Println(pair{request, response})
-		case err, ok := <-ee:
-			if !ok {
-				break ReadResponses
-			}
-			request := <-sent
-			fmt.Printf("fuck %v %v\n", request, err)
+	responses := make(chan maybe)
+	go streamValues(conn, responses)
+	for request := range sent {
+		response := <-responses
+		if response.ok() {
+			fmt.Fprintf(os.Stdout, "%v +> %v\n", request, response.val())
+		} else {
+			fmt.Fprintf(os.Stderr, "%v -> %v\n", request, response.val())
 		}
 	}
 }

@@ -132,24 +132,16 @@ func (s streamTest) run(t *testing.T) {
 		out[i-1] = s[i].(value)
 	}
 
-	c, e := make(chan value), make(chan error)
-	go streamValues(strings.NewReader(in), c, e)
+	c := make(chan maybe)
+	go streamValues(strings.NewReader(in), c)
 	var count int
-	for {
-		select {
-		case v, ok := <-c:
-			if !ok {
-				return
+	for v := range c {
+		if v.ok() {
+			if !eq(out[count], v.val()) {
+				t.Errorf("expected %q, got %q", out[count], v.val())
 			}
-			if !eq(out[count], v) {
-				t.Errorf("expected %q, got %q", out[count], v)
-			}
-		case err, ok := <-e:
-			if !ok {
-				return
-			}
-			t.Error(err)
-			return
+		} else {
+			t.Error(v.err())
 		}
 		count++
 	}
