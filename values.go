@@ -175,9 +175,12 @@ func readBulkString(prefix []byte, r io.Reader) (value, error) {
 
 	n += 2
 	b := make([]byte, n)
-	n_read, err := r.Read(b)
+	n_read, err := io.ReadFull(r, b)
 	switch err {
-	case io.EOF, nil:
+	case io.EOF:
+		fmt.Printf("saw eof after %d bytes looking for %d bytes in bulkstring\n", n_read, n)
+		fmt.Println(string(b))
+	case nil:
 		break
 	default:
 		return nil, fmt.Errorf("unable to read bulkstring in redis protocol: error on read: %v", err)
