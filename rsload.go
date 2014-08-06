@@ -47,7 +47,8 @@ func main() {
 	defer conn.Close()
 
 	if options.password != "" {
-		fmt.Fprintf(conn, "*2\r\n$4\r\nauth\r\n$%d\r\n%s\r\n", len(options.password), options.password)
+        auth(options.password).Write(conn)
+		// fmt.Fprintf(conn, "*2\r\n$4\r\nauth\r\n$%d\r\n%s\r\n", len(options.password), options.password)
 		v, err := readValue(conn)
 		if err != nil {
 			fmt.Printf("unable to auth: %v\n", err)
@@ -67,7 +68,7 @@ func main() {
 	defer infile.Close()
 
 	c, e := make(chan value), make(chan error)
-	sent := make(chan value, 1)
+	sent := make(chan value)
 	go streamValues(infile, c, e)
 	go func() {
 		for {

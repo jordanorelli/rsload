@@ -19,6 +19,10 @@ type value interface {
 	Write(io.Writer) (int, error)
 }
 
+func auth(password string) value {
+    return Array{BulkString("auth"), BulkString(password)}
+}
+
 func isOK(v value) bool {
 	vv, ok := v.(String)
 	if !ok {
