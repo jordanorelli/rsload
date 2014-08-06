@@ -1,14 +1,11 @@
 package main
 
 import (
-	// "bufio"
 	"flag"
 	"fmt"
-	// "io"
 	"math/rand"
 	"net"
 	"os"
-	// "strings"
 )
 
 var options struct {
@@ -70,7 +67,10 @@ func main() {
 	sent := make(chan value)
 	go streamValues(infile, c)
 	go func() {
-		defer close(sent)
+		defer func() {
+			close(sent)
+			fmt.Println("All data transferred. Waiting for the last reply...")
+		}()
 		for r := range c {
 			if r.ok() {
 				r.val().Write(conn)
@@ -82,16 +82,25 @@ func main() {
 		}
 	}()
 
+	replies, errors := 0, 0
 	responses := make(chan maybe)
 	go streamValues(conn, responses)
-	for request := range sent {
+	for _ = range sent {
 		response := <-responses
 		if response.ok() {
-			fmt.Fprintf(os.Stdout, "%v +> %v\n", request, response.val())
+			switch r := response.val().(type) {
+			case Error:
+				fmt.Fprintln(os.Stderr, r)
+				errors++
+			default:
+				replies++
+			}
 		} else {
-			fmt.Fprintf(os.Stderr, "%v -> %v\n", request, response.val())
+			fmt.Fprintln(os.Stderr, response.err())
 		}
 	}
+	fmt.Println("Last reply received from server.")
+	fmt.Printf("errors: %d, replies: %d\n", errors, replies)
 }
 
 func init() {
