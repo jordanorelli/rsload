@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"net"
@@ -79,13 +80,15 @@ func main() {
 	sent := make(chan value, options.buffer)
 	go streamValues(infile, c)
 	go func() {
+		w := bufio.NewWriterSize(conn, 4048)
 		defer func() {
 			close(sent)
 			fmt.Println("All data transferred. Waiting for the last reply...")
 		}()
 		for r := range c {
 			if r.ok() {
-				r.val().Write(conn)
+				r.val().Write(w)
+				w.Flush()
 				sent <- r.val()
 			} else {
 				fmt.Fprintf(os.Stderr, "InputError: %v\n", r.err())
