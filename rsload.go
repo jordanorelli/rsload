@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math/rand"
 	"net"
 	"os"
 )
@@ -19,15 +18,6 @@ var options struct {
 func usage(status int) {
 	fmt.Println("usage: rsload [filename]")
 	os.Exit(status)
-}
-
-func randomString(n int) string {
-	var alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	buf := make([]byte, n)
-	for i := 0; i < len(buf); i++ {
-		buf[i] = alpha[rand.Intn(len(alpha)-1)]
-	}
-	return string(buf)
 }
 
 func main() {
