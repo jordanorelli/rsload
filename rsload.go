@@ -80,15 +80,20 @@ func main() {
 	sent := make(chan value, options.buffer)
 	go streamValues(infile, c)
 	go func() {
-		w := bufio.NewWriterSize(conn, 4048)
+		w := bufio.NewWriterSize(conn, 16384)
 		defer func() {
 			close(sent)
 			fmt.Println("All data transferred. Waiting for the last reply...")
 		}()
+		count := 0
 		for r := range c {
+			count++
 			if r.ok() {
 				r.val().Write(w)
-				w.Flush()
+				if count == 100 {
+					w.Flush()
+					count = 0
+				}
 				sent <- r.val()
 			} else {
 				fmt.Fprintf(os.Stderr, "InputError: %v\n", r.err())
