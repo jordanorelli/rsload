@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"runtime/pprof"
 )
 
 var options struct {
@@ -13,6 +14,7 @@ var options struct {
 	password string
 	buffer   int
 	pipe     bool
+	profile  string
 }
 
 func usage(status int) {
@@ -41,6 +43,16 @@ func main() {
 			fmt.Printf("not OK: %v\n", v)
 			os.Exit(1)
 		}
+	}
+
+	if options.profile != "" {
+		f, err := os.Create(options.profile)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 	}
 
 	var infile *os.File
@@ -109,6 +121,7 @@ func init() {
 	flag.StringVar(&options.password, "a", "", "password")
 	flag.IntVar(&options.buffer, "buffer", 0, "number of outstanding statements allowed before throttling")
 	flag.BoolVar(&options.pipe, "pipe", false, "transfers input from stdin to server")
+	flag.StringVar(&options.profile, "profile", "", "pprof file output for performance debugging")
 }
 
 /*
