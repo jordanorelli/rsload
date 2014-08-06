@@ -45,7 +45,7 @@ func isOK(v value) bool {
 	if !ok {
 		return false
 	}
-	return vv == "OK"
+	return string(vv) == "OK"
 }
 
 func streamValues(r io.Reader, c chan maybe) {
@@ -102,11 +102,11 @@ func readValue(r io.Reader) (value, error) {
 	line = line[:len(line)-2]
 	switch line[0] {
 	case start_string:
-		return readString(line[1:])
+		return String(line[1:]), nil
 	case start_error:
-		return readError(line[1:])
+		return Error(line[1:]), nil
 	case start_integer:
-		return readInteger(line[1:])
+		return Integer(line[1:]), nil
 	case start_bulkstring:
 		return readBulkString(line[1:], br)
 	case start_array:
@@ -118,15 +118,11 @@ func readValue(r io.Reader) (value, error) {
 
 // ------------------------------------------------------------------------------
 
-type String string
-
-func readString(b []byte) (value, error) {
-	return String(b), nil
-}
+type String []byte
 
 func (s String) Write(w io.Writer) (int, error) {
 	w.Write([]byte{'+'})
-	w.Write([]byte(s))
+	w.Write(s)
 	w.Write([]byte{'\r', '\n'})
 	return 0, nil
 	// return fmt.Fprintf(w, "+%s\r\n", s)
@@ -135,10 +131,6 @@ func (s String) Write(w io.Writer) (int, error) {
 // ------------------------------------------------------------------------------
 
 type Error string
-
-func readError(b []byte) (value, error) {
-	return Error(b), nil
-}
 
 func (e Error) Write(w io.Writer) (int, error) {
 	w.Write([]byte{'-'})
@@ -150,19 +142,11 @@ func (e Error) Write(w io.Writer) (int, error) {
 
 // ------------------------------------------------------------------------------
 
-type Integer int64
-
-func readInteger(b []byte) (value, error) {
-	i, err := strconv.ParseInt(string(b), 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read integer in redis protocol format: %v", err)
-	}
-	return Integer(i), nil
-}
+type Integer []byte
 
 func (i Integer) Write(w io.Writer) (int, error) {
 	w.Write([]byte{':'})
-	w.Write([]byte(strconv.Itoa(int(i))))
+	w.Write(i)
 	w.Write([]byte{'\r', '\n'})
 	return 0, nil
 	// return fmt.Fprintf(w, ":%d\r\n", i)
@@ -170,7 +154,7 @@ func (i Integer) Write(w io.Writer) (int, error) {
 
 // ------------------------------------------------------------------------------
 
-type BulkString string
+type BulkString []byte
 
 func readBulkString(prefix []byte, r io.Reader) (value, error) {
 	n, err := strconv.ParseInt(string(prefix), 10, 64)
@@ -186,7 +170,7 @@ func readBulkString(prefix []byte, r io.Reader) (value, error) {
 	}
 
 	n += 2
-	b := make([]byte, n)
+	b := make(BulkString, n)
 	n_read, err := io.ReadFull(r, b)
 	switch err {
 	case io.EOF:
@@ -198,22 +182,14 @@ func readBulkString(prefix []byte, r io.Reader) (value, error) {
 		return nil, fmt.Errorf("unable to read bulkstring in redis protocol: error on read: %v", err)
 	}
 
-	if int64(n_read) != n {
-		return nil, fmt.Errorf("unable to read bulkstring in redis protocol: read %d bytes, expected to read %d bytes", int64(n_read), n)
-	}
-
-	if len(b) < 2 {
-		return nil, fmt.Errorf("unable to read bulkstring in redis protocol: input %q is too short", b)
-	}
-
-	return BulkString(b[:len(b)-2]), nil
+	return b[:len(b)-2], nil
 }
 
 func (s BulkString) Write(w io.Writer) (int, error) {
 	w.Write([]byte{'$'})
 	w.Write([]byte(strconv.Itoa(len(s))))
 	w.Write([]byte{'\r', '\n'})
-	w.Write([]byte(s))
+	w.Write(s)
 	w.Write([]byte{'\r', '\n'})
 	return 0, nil
 	// return fmt.Fprintf(w, "$%d\r\n%s\r\n", len(s), s)
