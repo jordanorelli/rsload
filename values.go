@@ -38,11 +38,17 @@ func (m maybe) val() value {
 }
 
 func isOK(v value) bool {
-	vv, ok := v.(String)
+	vv, ok := v.(StringVal)
 	if !ok {
 		return false
 	}
 	return string(vv) == "OK"
+}
+
+func getBytes(v value) []byte {
+	var buf bytes.Buffer
+	v.Write(&buf)
+	return buf.Bytes()
 }
 
 func streamValues(r io.Reader, c chan maybe) {
@@ -99,7 +105,7 @@ func readValue(r io.Reader) (value, error) {
 	line = line[:len(line)-2]
 	switch line[0] {
 	case start_string:
-		return String(line[1:]), nil
+		return StringVal(line[1:]), nil
 	case start_error:
 		return Error(line[1:]), nil
 	case start_integer:
@@ -115,13 +121,17 @@ func readValue(r io.Reader) (value, error) {
 
 // ------------------------------------------------------------------------------
 
-type String []byte
+type StringVal []byte
 
-func (s String) Write(w io.Writer) (int, error) {
+func (s StringVal) Write(w io.Writer) (int, error) {
 	w.Write([]byte{'+'})
 	w.Write(s)
 	w.Write([]byte{'\r', '\n'})
 	return 0, nil
+}
+
+func String(s string) value {
+	return StringVal(s)
 }
 
 // ------------------------------------------------------------------------------
