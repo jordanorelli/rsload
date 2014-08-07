@@ -125,7 +125,6 @@ func (s String) Write(w io.Writer) (int, error) {
 	w.Write(s)
 	w.Write([]byte{'\r', '\n'})
 	return 0, nil
-	// return fmt.Fprintf(w, "+%s\r\n", s)
 }
 
 // ------------------------------------------------------------------------------
@@ -137,7 +136,6 @@ func (e Error) Write(w io.Writer) (int, error) {
 	w.Write([]byte(e))
 	w.Write([]byte{'\r', '\n'})
 	return 0, nil
-	// return fmt.Fprintf(w, "-%s\r\n")
 }
 
 // ------------------------------------------------------------------------------
@@ -149,7 +147,6 @@ func (i Integer) Write(w io.Writer) (int, error) {
 	w.Write(i)
 	w.Write([]byte{'\r', '\n'})
 	return 0, nil
-	// return fmt.Fprintf(w, ":%d\r\n", i)
 }
 
 // ------------------------------------------------------------------------------
@@ -192,7 +189,6 @@ func (s BulkString) Write(w io.Writer) (int, error) {
 	w.Write(s)
 	w.Write([]byte{'\r', '\n'})
 	return 0, nil
-	// return fmt.Fprintf(w, "$%d\r\n%s\r\n", len(s), s)
 }
 
 // -----------------------------------------------------------------------------------------
@@ -227,23 +223,8 @@ func (a Array) Write(w io.Writer) (int, error) {
 	w.Write([]byte{'*'})
 	w.Write([]byte(strconv.Itoa(len(a))))
 	w.Write([]byte{'\r', '\n'})
-	// n, err := fmt.Fprintf(w, "*%d\r\n", len(a))
-	// if err != nil {
-	// 	return n, err
-	// }
-
-	// var (
-	// 	nn int
-	// 	e  error
-	// )
 	for i := 0; i < len(a); i++ {
 		a[i].Write(w)
-		// nn, e = a[i].Write(w)
-		// n += nn
-		// if e != nil {
-		// 	return n, e
-		// }
 	}
-	// return n, nil
 	return 0, nil
 }
