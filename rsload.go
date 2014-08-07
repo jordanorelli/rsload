@@ -16,6 +16,7 @@ var options struct {
 	buffer   int
 	pipe     bool
 	profile  string
+	verbose  bool
 }
 
 func usage(status int) {
@@ -105,14 +106,21 @@ func main() {
 	replies, errors := 0, 0
 	responses := make(chan maybe)
 	go streamValues(conn, responses)
-	for _ = range sent {
+	for request := range sent {
 		response := <-responses
 		if response.ok() {
 			switch r := response.val().(type) {
 			case Error:
-				fmt.Fprintln(os.Stderr, r)
+				if options.verbose {
+					fmt.Fprintf(os.Stderr, "%q -> %q\n", request, response.val())
+				} else {
+					fmt.Fprintln(os.Stderr, r)
+				}
 				errors++
 			default:
+				if options.verbose {
+					fmt.Fprintf(os.Stdout, "%q -> %q\n", request, response.val())
+				}
 				replies++
 			}
 		} else {
@@ -130,6 +138,7 @@ func init() {
 	flag.IntVar(&options.buffer, "buffer", 0, "number of outstanding statements allowed before throttling")
 	flag.BoolVar(&options.pipe, "pipe", false, "transfers input from stdin to server")
 	flag.StringVar(&options.profile, "profile", "", "pprof file output for performance debugging")
+	flag.BoolVar(&options.verbose, "v", false, "verbose mode (prints all requests and responses)")
 }
 
 /*
