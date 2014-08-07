@@ -54,7 +54,7 @@ func getBytes(v value) []byte {
 func streamValues(r io.Reader, c chan maybe) {
 	defer close(c)
 
-	r = bufio.NewReader(r)
+	r = bufio.NewReaderSize(r, 65536)
 	for {
 		v, err := readValue(r)
 		switch err {
