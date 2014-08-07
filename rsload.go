@@ -42,7 +42,7 @@ func main() {
 			os.Exit(1)
 		}
 		if !isOK(v) {
-			fmt.Printf("not OK: %v\n", v)
+			fmt.Printf("auth not OK: %q\n", v)
 			os.Exit(1)
 		}
 	}

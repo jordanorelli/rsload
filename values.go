@@ -42,7 +42,7 @@ func isOK(v value) bool {
 	if !ok {
 		return false
 	}
-	return string(vv) == "OK"
+	return string(vv) == "+OK\r\n"
 }
 
 func getBytes(v value) []byte {
@@ -110,8 +110,7 @@ func readValue(r io.Reader) (value, error) {
 	case start_integer:
 		return IntVal(line), nil
 	case start_bulkstring:
-		line = line[:len(line)-2]
-		return readBulkString(line[1:], br)
+		return readBulkString(line, br)
 	case start_array:
 		line = line[:len(line)-2]
 		return readArray(line[1:], br)
@@ -174,10 +173,23 @@ func Int(i int) value {
 
 // ------------------------------------------------------------------------------
 
-type BulkString []byte
+type BulkStringVal []byte
+
+func BulkString(s string) value {
+	l := strconv.Itoa(len(s))
+	b := make(BulkStringVal, len(l)+len(s)+5)
+	b[0] = '$'
+	copy(b[1:], l)
+	b[len(l)+1] = '\r'
+	b[len(l)+2] = '\n'
+	copy(b[len(l)+3:], s)
+	b[len(b)-2] = '\r'
+	b[len(b)-1] = '\n'
+	return b
+}
 
 func readBulkString(prefix []byte, r io.Reader) (value, error) {
-	n, err := strconv.ParseInt(string(prefix), 10, 64)
+	n, err := strconv.Atoi(string(prefix[1 : len(prefix)-2]))
 	if err != nil {
 		return nil, fmt.Errorf("unable to read bulkstring in redis protocol: bad prefix: %v", err)
 	}
@@ -189,9 +201,9 @@ func readBulkString(prefix []byte, r io.Reader) (value, error) {
 		return nil, fmt.Errorf("redis protocol error: illegal bulk string of negative length %d", n)
 	}
 
-	n += 2
-	b := make(BulkString, n)
-	n_read, err := io.ReadFull(r, b)
+	b := make(BulkStringVal, len(prefix)+n+2)
+	copy(b, prefix)
+	n_read, err := io.ReadFull(r, b[len(prefix):])
 	switch err {
 	case io.EOF:
 		fmt.Printf("saw eof after %d bytes looking for %d bytes in bulkstring\n", n_read, n)
@@ -202,16 +214,11 @@ func readBulkString(prefix []byte, r io.Reader) (value, error) {
 		return nil, fmt.Errorf("unable to read bulkstring in redis protocol: error on read: %v", err)
 	}
 
-	return b[:len(b)-2], nil
+	return b, nil
 }
 
-func (s BulkString) Write(w io.Writer) (int, error) {
-	w.Write([]byte{'$'})
-	w.Write([]byte(strconv.Itoa(len(s))))
-	w.Write([]byte{'\r', '\n'})
-	w.Write(s)
-	w.Write([]byte{'\r', '\n'})
-	return 0, nil
+func (s BulkStringVal) Write(w io.Writer) (int, error) {
+	return w.Write(s)
 }
 
 // -----------------------------------------------------------------------------------------
