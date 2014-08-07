@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -189,10 +190,10 @@ func (s BulkString) Write(w io.Writer) (int, error) {
 
 // -----------------------------------------------------------------------------------------
 
-type Array []value
+type Array []byte
 
 func readArray(prefix []byte, r *bufio.Reader) (value, error) {
-	n, err := strconv.ParseInt(string(prefix), 10, 64)
+	n, err := strconv.Atoi(string(prefix))
 	if err != nil {
 		return nil, fmt.Errorf("unable to read array in redis protocol: bad prefix: %v", err)
 	}
@@ -204,23 +205,21 @@ func readArray(prefix []byte, r *bufio.Reader) (value, error) {
 		return nil, fmt.Errorf("redis protocol error: illegal array of negative length %d", n)
 	}
 
-	a := make(Array, n)
-	for i := int64(0); i < n; i++ {
+	buf := bytes.NewBuffer(make([]byte, 0, n*128))
+	buf.Write([]byte{'*'})
+	buf.Write([]byte(strconv.Itoa(n)))
+	buf.Write([]byte{'\r', '\n'})
+	for i := 0; i < n; i++ {
 		v, err := readValue(r)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read array value in redis protocol: %v", err)
 		}
-		a[i] = v
+		v.Write(buf)
 	}
-	return a, nil
+	return Array(buf.Bytes()), nil
 }
 
 func (a Array) Write(w io.Writer) (int, error) {
-	w.Write([]byte{'*'})
-	w.Write([]byte(strconv.Itoa(len(a))))
-	w.Write([]byte{'\r', '\n'})
-	for i := 0; i < len(a); i++ {
-		a[i].Write(w)
-	}
+	w.Write(a)
 	return 0, nil
 }
