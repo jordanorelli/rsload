@@ -56,13 +56,13 @@ var valueTests = []valueTest{
 	{"$4\r\netsy\r\n", BulkString("etsy")},
 	{"$12\r\nSaskatchewan\r\n", BulkString("Saskatchewan")},
 
-	// {":0", Integer(0)},
-	// {":1", Integer(1)},
-	// {":-1", Integer(-1)},
-	// {":12345", Integer(12345)},
-	// {":-12345", Integer(-12345)},
-	// {":9223372036854775807", Integer(9223372036854775807)},   // int64 max
-	// {":-9223372036854775808", Integer(-9223372036854775808)}, // int64 min
+	{":0\r\n", Int(0)},
+	{":1\r\n", Int(1)},
+	{":-1\r\n", Int(-1)},
+	{":12345\r\n", Int(12345)},
+	{":-12345\r\n", Int(-12345)},
+	{":9223372036854775807\r\n", Int(9223372036854775807)},   // int64 max
+	{":-9223372036854775808\r\n", Int(-9223372036854775808)}, // int64 min
 
 	{"+hello\r\n+extra\r\n", String("hello")},
 	{"+one two\r\n+extra\r\n", String("one two")},   // intermediate space
@@ -74,13 +74,13 @@ var valueTests = []valueTest{
 	{"-one two \r\n+extra\r\n", Error("one two ")}, // trailing space
 	{"- one two\r\n+extra\r\n", Error(" one two")}, // leading space
 
-	// {":0\r\n+extra\r\n", Integer(0)},
-	// {":1\r\n+extra\r\n", Integer(1)},
-	// {":-1\r\n+extra\r\n", Integer(-1)},
-	// {":12345\r\n+extra\r\n", Integer(12345)},
-	// {":-12345\r\n+extra\r\n", Integer(-12345)},
-	// {":9223372036854775807\r\n+extra\r\n", Integer(9223372036854775807)},   // int64 max
-	// {":-9223372036854775808\r\n+extra\r\n", Integer(-9223372036854775808)}, // int64 min
+	{":0\r\n+extra\r\n", Int(0)},
+	{":1\r\n+extra\r\n", Int(1)},
+	{":-1\r\n+extra\r\n", Int(-1)},
+	{":12345\r\n+extra\r\n", Int(12345)},
+	{":-12345\r\n+extra\r\n", Int(-12345)},
+	{":9223372036854775807\r\n+extra\r\n", Int(9223372036854775807)},   // int64 max
+	{":-9223372036854775808\r\n+extra\r\n", Int(-9223372036854775808)}, // int64 min
 
 	{"*-1\r\n", nil}, // nil array
 	// {"*0\r\n", Array{}}, // is this a thing?  I have no idea.
@@ -100,7 +100,7 @@ type streamTest []interface{}
 
 var streamTests = []streamTest{
 	{"+hello\r\n", String("hello")},
-	// {":1\r\n:2\r\n:3\r\n", Integer(1), Integer(2), Integer(3)},
+	{":1\r\n:2\r\n:3\r\n", Int(1), Int(2), Int(3)},
 	// {"*0\r\n", Array{}},
 	// {"*1\r\n+one\r\n", Array{String("one")}},
 	// {"*2\r\n+one\r\n+two\r\n", Array{String("one"), String("two")}},

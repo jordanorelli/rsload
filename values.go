@@ -108,8 +108,7 @@ func readValue(r io.Reader) (value, error) {
 	case start_error:
 		return ErrorVal(line), nil
 	case start_integer:
-		line = line[:len(line)-2]
-		return Integer(line[1:]), nil
+		return IntVal(line), nil
 	case start_bulkstring:
 		line = line[:len(line)-2]
 		return readBulkString(line[1:], br)
@@ -131,8 +130,8 @@ func (s StringVal) Write(w io.Writer) (int, error) {
 
 func String(s string) value {
 	b := make(StringVal, len(s)+3)
-	b[0] = '+'
-	copy(b[1:], []byte(s))
+	b[0] = start_string
+	copy(b[1:], s)
 	b[len(b)-2] = '\r'
 	b[len(b)-1] = '\n'
 	return b
@@ -143,17 +142,13 @@ func String(s string) value {
 type ErrorVal []byte
 
 func (e ErrorVal) Write(w io.Writer) (int, error) {
-	// w.Write([]byte{'-'})
-	// w.Write([]byte(e))
-	// w.Write([]byte{'\r', '\n'})
-	// return 0, nil
 	return w.Write(e)
 }
 
 func Error(s string) value {
 	b := make(ErrorVal, len(s)+3)
-	b[0] = '-'
-	copy(b[1:], []byte(s))
+	b[0] = start_error
+	copy(b[1:], s)
 	b[len(b)-2] = '\r'
 	b[len(b)-1] = '\n'
 	return b
@@ -161,13 +156,20 @@ func Error(s string) value {
 
 // ------------------------------------------------------------------------------
 
-type Integer []byte
+type IntVal []byte
 
-func (i Integer) Write(w io.Writer) (int, error) {
-	w.Write([]byte{':'})
-	w.Write(i)
-	w.Write([]byte{'\r', '\n'})
-	return 0, nil
+func (i IntVal) Write(w io.Writer) (int, error) {
+	return w.Write(i)
+}
+
+func Int(i int) value {
+	s := strconv.Itoa(i)
+	b := make(ErrorVal, len(s)+3)
+	b[0] = start_integer
+	copy(b[1:], s)
+	b[len(b)-2] = '\r'
+	b[len(b)-1] = '\n'
+	return b
 }
 
 // ------------------------------------------------------------------------------
