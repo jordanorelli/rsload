@@ -35,7 +35,7 @@ func main() {
 	defer conn.Close()
 
 	if options.password != "" {
-		auth(options.password).Write(conn)
+		fmt.Fprintf(conn, "*2\r\n$4\r\nauth\r\n$%d\r\n%s\r\n", len(options.password), options.password)
 		v, err := readValue(conn)
 		if err != nil {
 			fmt.Printf("unable to auth: %v\n", err)
