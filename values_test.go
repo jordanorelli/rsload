@@ -39,10 +39,10 @@ var valueTests = []valueTest{
 	{"+one two ", String("one two ")}, // trailing space
 	{"+ one two", String(" one two")}, // leading space
 
-	// {"-hello", Error("hello")},
-	// {"-one two", Error("one two")},   // intermediate space
-	// {"-one two ", Error("one two ")}, // trailing space
-	// {"- one two", Error(" one two")}, // leading space
+	{"-hello", Error("hello")},
+	{"-one two", Error("one two")},   // intermediate space
+	{"-one two ", Error("one two ")}, // trailing space
+	{"- one two", Error(" one two")}, // leading space
 
 	// {"$-1\r\n", nil},
 	// {"$0\r\n\r\n", BulkString("")}, // is this even a thing?
