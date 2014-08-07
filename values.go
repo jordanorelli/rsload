@@ -80,7 +80,7 @@ func readValue(r io.Reader) (value, error) {
 	case *bufio.Reader:
 		br = t
 	default:
-		br = bufio.NewReader(r)
+		br = bufio.NewReaderSize(r, 65536)
 	}
 
 	line, err := br.ReadBytes('\n')
@@ -112,8 +112,7 @@ func readValue(r io.Reader) (value, error) {
 	case start_bulkstring:
 		return readBulkString(line, br)
 	case start_array:
-		line = line[:len(line)-2]
-		return readArray(line[1:], br)
+		return readArray(line, br)
 	default:
 		return nil, fmt.Errorf("unable to read redis protocol value: illegal start character: %c", line[0])
 	}
@@ -226,7 +225,7 @@ func (s BulkStringVal) Write(w io.Writer) (int, error) {
 type Array []byte
 
 func readArray(prefix []byte, r *bufio.Reader) (value, error) {
-	n, err := strconv.Atoi(string(prefix))
+	n, err := strconv.Atoi(string(prefix[1 : len(prefix)-2]))
 	if err != nil {
 		return nil, fmt.Errorf("unable to read array in redis protocol: bad prefix: %v", err)
 	}
@@ -239,9 +238,7 @@ func readArray(prefix []byte, r *bufio.Reader) (value, error) {
 	}
 
 	buf := bytes.NewBuffer(make([]byte, 0, n*128))
-	buf.Write([]byte{'*'})
-	buf.Write([]byte(strconv.Itoa(n)))
-	buf.Write([]byte{'\r', '\n'})
+	buf.Write(prefix)
 	for i := 0; i < n; i++ {
 		v, err := readValue(r)
 		if err != nil {
@@ -253,6 +250,5 @@ func readArray(prefix []byte, r *bufio.Reader) (value, error) {
 }
 
 func (a Array) Write(w io.Writer) (int, error) {
-	w.Write(a)
-	return 0, nil
+	return w.Write(a)
 }
