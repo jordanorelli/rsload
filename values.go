@@ -106,8 +106,7 @@ func readValue(r io.Reader) (value, error) {
 	case start_string:
 		return StringVal(line), nil
 	case start_error:
-		line = line[:len(line)-2]
-		return Error(line[1:]), nil
+		return ErrorVal(line), nil
 	case start_integer:
 		line = line[:len(line)-2]
 		return Integer(line[1:]), nil
@@ -141,13 +140,23 @@ func String(s string) value {
 
 // ------------------------------------------------------------------------------
 
-type Error string
+type ErrorVal []byte
 
-func (e Error) Write(w io.Writer) (int, error) {
-	w.Write([]byte{'-'})
-	w.Write([]byte(e))
-	w.Write([]byte{'\r', '\n'})
-	return 0, nil
+func (e ErrorVal) Write(w io.Writer) (int, error) {
+	// w.Write([]byte{'-'})
+	// w.Write([]byte(e))
+	// w.Write([]byte{'\r', '\n'})
+	// return 0, nil
+	return w.Write(e)
+}
+
+func Error(s string) value {
+	b := make(ErrorVal, len(s)+3)
+	b[0] = '-'
+	copy(b[1:], []byte(s))
+	b[len(b)-2] = '\r'
+	b[len(b)-1] = '\n'
+	return b
 }
 
 // ------------------------------------------------------------------------------

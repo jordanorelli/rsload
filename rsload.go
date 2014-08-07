@@ -110,7 +110,7 @@ func main() {
 		response := <-responses
 		if response.ok() {
 			switch r := response.val().(type) {
-			case Error:
+			case ErrorVal:
 				if options.verbose {
 					fmt.Fprintf(os.Stderr, "%q -> %q\n", request, response.val())
 				} else {
