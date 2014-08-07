@@ -102,17 +102,20 @@ func readValue(r io.Reader) (value, error) {
 	if line[len(line)-2] != '\r' {
 		return nil, fmt.Errorf("unable to read redis protocol value: bad line terminator: %q", line)
 	}
-	line = line[:len(line)-2]
 	switch line[0] {
 	case start_string:
-		return StringVal(line[1:]), nil
+		return StringVal(line), nil
 	case start_error:
+		line = line[:len(line)-2]
 		return Error(line[1:]), nil
 	case start_integer:
+		line = line[:len(line)-2]
 		return Integer(line[1:]), nil
 	case start_bulkstring:
+		line = line[:len(line)-2]
 		return readBulkString(line[1:], br)
 	case start_array:
+		line = line[:len(line)-2]
 		return readArray(line[1:], br)
 	default:
 		return nil, fmt.Errorf("unable to read redis protocol value: illegal start character: %c", line[0])
@@ -124,14 +127,16 @@ func readValue(r io.Reader) (value, error) {
 type StringVal []byte
 
 func (s StringVal) Write(w io.Writer) (int, error) {
-	w.Write([]byte{'+'})
-	w.Write(s)
-	w.Write([]byte{'\r', '\n'})
-	return 0, nil
+	return w.Write(s)
 }
 
 func String(s string) value {
-	return StringVal(s)
+	b := make(StringVal, len(s)+3)
+	b[0] = '+'
+	copy(b[1:], []byte(s))
+	b[len(b)-2] = '\r'
+	b[len(b)-1] = '\n'
+	return b
 }
 
 // ------------------------------------------------------------------------------
