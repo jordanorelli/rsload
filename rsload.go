@@ -10,7 +10,9 @@ import (
 	"time"
 )
 
-var chunk_size = 100
+var chunk_size = 1
+var chunk_target = 250 * time.Millisecond
+var chunk_max = 10000
 
 var options struct {
 	host     string
@@ -34,10 +36,10 @@ type chunk struct {
 }
 
 func (c *chunk) send(w *bufio.Writer, responses chan maybe) {
+	start := time.Now()
 	for _, v := range c.vals {
 		v.Write(w)
 	}
-	start := time.Now()
 	size := w.Buffered()
 	w.Flush()
 	errors, replies := 0, 0
@@ -69,10 +71,19 @@ func (c *chunk) send(w *bufio.Writer, responses chan maybe) {
 	elapsed := time.Since(start)
 	sleep := elapsed / 4
 	time.Sleep(sleep)
+	avg := time.Duration(int64(elapsed) / int64(len(c.vals)))
+	next_size := int(int64(chunk_target) / int64(avg))
 	if true {
-		avg := time.Duration(int64(elapsed) / int64(len(c.vals)))
-		fmt.Printf("id: %d errors: %d replies: %d total: %d sent: %d elapsed: %v avg: %v size: %v sleep: %v\n",
-			c.id, errors, replies, errors+replies, len(c.vals), elapsed, avg, size, sleep)
+		fmt.Printf("id: %d errors: %d replies: %d total: %d sent: %d elapsed: %v avg: %v size: %v sleep: %v next_size: %v\n",
+			c.id, errors, replies, errors+replies, len(c.vals), elapsed, avg, size, sleep, next_size)
+	}
+	if next_size < chunk_size*2 {
+		chunk_size = next_size
+	} else {
+		chunk_size *= 2
+	}
+	if chunk_size > chunk_max {
+		chunk_size = chunk_max
 	}
 }
 
