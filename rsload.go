@@ -155,68 +155,6 @@ func main() {
 		requests.send(w, responses)
 	}
 
-	// go func() {
-	// 	w := bufio.NewWriterSize(conn, 16384)
-	// 	defer func() {
-	// 		close(sent)
-	// 		fmt.Println("All data transferred. Waiting for the last reply...")
-	// 	}()
-	// 	requests := &chunk{vals: make([]value, 0, chunk_size)}
-	// 	for m := range c {
-	// 		if !m.ok() {
-	// 			fmt.Fprintf(os.Stderr, "InputError: %v\n", m.err())
-	// 			continue
-	// 		}
-	// 		if _, err := m.val().Write(w); err != nil {
-	// 			fmt.Fprintf(os.Stderr, "WriteError: %v\n", err)
-	// 		}
-
-	// 		requests.vals = append(requests.vals, m.val())
-	// 		if len(requests.vals) == cap(requests.vals) {
-	// 			requests.t = time.Now()
-	// 			if err := w.Flush(); err != nil {
-	// 				fmt.Fprintf(os.Stderr, "FlushError: %v\n", err)
-	// 			}
-	// 			sent <- requests
-	// 			requests = &chunk{vals: make([]value, 0, chunk_size)}
-	// 		}
-	// 	}
-	// 	if len(requests.vals) > 0 {
-	// 		if err := w.Flush(); err != nil {
-	// 			fmt.Fprintf(os.Stderr, "FlushError: %v\n", err)
-	// 		}
-	// 		sent <- requests
-	// 	}
-	// }()
-
-	// id := 1
-	// for requests := range sent {
-	// 	for _, request := range requests.vals {
-	// 		response := <-responses
-	// 		if response.ok() {
-	// 			switch r := response.val().(type) {
-	// 			case ErrorVal:
-	// 				if options.verbose {
-	// 					fmt.Fprintf(os.Stderr, "%q -> %q\n", request, response.val())
-	// 				} else {
-	// 					fmt.Fprintln(os.Stderr, r)
-	// 				}
-	// 				errors++
-	// 			default:
-	// 				if options.verbose {
-	// 					fmt.Fprintf(os.Stdout, "%q -> %q\n", request, response.val())
-	// 				}
-	// 				replies++
-	// 			}
-	// 		} else {
-	// 			fmt.Fprintf(os.Stderr, "ResponseError: %v\n", response.err())
-	// 		}
-	// 	}
-	// 	elapsed := time.Since(requests.t)
-	// 	fmt.Fprintf(os.Stdout, "%d %d %v %v\n", id, len(requests.vals), elapsed,
-	// 		time.Duration(int64(elapsed)/int64(len(requests.vals))))
-	// 	id++
-	// }
 	// fmt.Println("Last reply received from server.")
 	// fmt.Printf("errors: %d, replies: %d\n", errors, replies)
 }
