@@ -15,13 +15,14 @@ var chunk_target = 250 * time.Millisecond
 var chunk_max = 10000
 
 var options struct {
-	host     string
-	port     int
-	password string
-	buffer   int
-	pipe     bool
-	profile  string
-	verbose  bool
+	host      string
+	port      int
+	password  string
+	buffer    int
+	pipe      bool
+	profile   string
+	verbose   bool
+	chunkInfo bool
 }
 
 func usage(status int) {
@@ -35,7 +36,7 @@ type chunk struct {
 	t    time.Time
 }
 
-func (c *chunk) send(w *bufio.Writer, responses chan maybe) {
+func (c *chunk) send(w *bufio.Writer, responses chan maybe) (int, int) {
 	start := time.Now()
 	for _, v := range c.vals {
 		v.Write(w)
@@ -47,7 +48,7 @@ func (c *chunk) send(w *bufio.Writer, responses chan maybe) {
 		response, ok := <-responses
 		if !ok {
 			fmt.Fprintf(os.Stderr, "ohhhhhhhhhhhhh fuck\n")
-			return
+			return -1, -1
 		}
 		if response.ok() {
 			switch r := response.val().(type) {
@@ -73,7 +74,7 @@ func (c *chunk) send(w *bufio.Writer, responses chan maybe) {
 	time.Sleep(sleep)
 	avg := time.Duration(int64(elapsed) / int64(len(c.vals)))
 	next_size := int(int64(chunk_target) / int64(avg))
-	if true {
+	if options.chunkInfo {
 		fmt.Printf("id: %d errors: %d replies: %d total: %d sent: %d elapsed: %v avg: %v size: %v sleep: %v next_size: %v\n",
 			c.id, errors, replies, errors+replies, len(c.vals), elapsed, avg, size, sleep, next_size)
 	}
@@ -85,6 +86,7 @@ func (c *chunk) send(w *bufio.Writer, responses chan maybe) {
 	if chunk_size > chunk_max {
 		chunk_size = chunk_max
 	}
+	return errors, replies
 }
 
 func main() {
@@ -150,6 +152,7 @@ func main() {
 
 	id := 1
 	requests := &chunk{id: id, vals: make([]value, 0, chunk_size)}
+	errors, replies := 0, 0
 	for m := range c {
 		if !m.ok() {
 			fmt.Fprintf(os.Stderr, "InputError: %v\n", m.err())
@@ -157,17 +160,21 @@ func main() {
 		}
 		requests.vals = append(requests.vals, m.val())
 		if len(requests.vals) == cap(requests.vals) {
-			requests.send(w, responses)
+			nErrors, nReplies := requests.send(w, responses)
+			errors += nErrors
+			replies += nReplies
 			id++
 			requests = &chunk{id: id, vals: make([]value, 0, chunk_size)}
 		}
 	}
 	if len(requests.vals) > 0 {
-		requests.send(w, responses)
+		nErrors, nReplies := requests.send(w, responses)
+		errors += nErrors
+		replies += nReplies
 	}
 
-	// fmt.Println("Last reply received from server.")
-	// fmt.Printf("errors: %d, replies: %d\n", errors, replies)
+	fmt.Println("Last reply received from server.")
+	fmt.Printf("errors: %d, replies: %d\n", errors, replies)
 }
 
 func init() {
@@ -178,6 +185,7 @@ func init() {
 	flag.BoolVar(&options.pipe, "pipe", false, "transfers input from stdin to server")
 	flag.StringVar(&options.profile, "profile", "", "pprof file output for performance debugging")
 	flag.BoolVar(&options.verbose, "v", false, "verbose mode (prints all requests and responses)")
+	flag.BoolVar(&options.chunkInfo, "chunk-info", false, "show chunk info")
 }
 
 /*
