@@ -56,6 +56,10 @@ func (s *sendResult) stop() {
 }
 
 func (s *sendResult) avg() time.Duration {
+	if s.read == 0 {
+		fmt.Fprintln(os.Stderr, "for some reason, we tried to divide by zero on sendResult.avg.  we recovered, though.")
+		return 100 * time.Microsecond
+	}
 	return time.Duration(int64(s.elapsed) / int64(s.read))
 }
 
