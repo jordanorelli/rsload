@@ -100,7 +100,7 @@ func (s *sendResult) accumulate(request value, response maybe) {
 			if options.verbose {
 				fmt.Fprintf(os.Stderr, "%q -> %q\n", request, response.val())
 			} else {
-				fmt.Fprintln(os.Stderr, r)
+				fmt.Fprintf(os.Stderr, "%q\n", r)
 			}
 			s.errors++
 		default:
@@ -221,7 +221,7 @@ func main() {
 			stats.log()
 			errors += stats.errors
 			replies += stats.replies
-			time.Sleep(stats.elapsed / 4)
+			time.Sleep(time.Duration(float64(stats.elapsed) * 0.1))
 			id++
 			requests = &chunk{id: id, vals: make([]value, 0, stats.nextSize())}
 		}
