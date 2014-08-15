@@ -149,6 +149,9 @@ func (c *chunk) send(w *bufio.Writer, responses chan maybe) *sendResult {
 	return stats
 }
 
+// sets up our input file for reading.  If the --pipe option was specified, the
+// input file is stdin. Otherwise, the input file is the first argument on the
+// command line.
 func infile() *os.File {
 	if options.pipe {
 		return os.Stdin
