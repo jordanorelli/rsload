@@ -150,6 +150,25 @@ func (c *chunk) send(w *bufio.Writer, responses chan maybe) *sendResult {
 	return stats
 }
 
+func infile() *os.File {
+	if options.pipe {
+		return os.Stdin
+	}
+
+	args := flag.Args()
+	if len(args) < 1 {
+		usage(1)
+	}
+	fname := args[0]
+
+	f, err := os.Open(fname)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "unable to open file %s: %v\n", fname, err)
+		os.Exit(1)
+	}
+	return f
+}
+
 func main() {
 	flag.Parse()
 
@@ -183,31 +202,13 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	var infile *os.File
-
-	if options.pipe {
-		infile = os.Stdin
-	} else {
-		args := flag.Args()
-		if len(args) < 1 {
-			usage(1)
-		}
-		fname := args[0]
-
-		var err error
-		infile, err = os.Open(fname)
-		if err != nil {
-			fmt.Printf("unable to open file %s: %v\n", fname, err)
-			os.Exit(1)
-		}
-		defer infile.Close()
-	}
+	f := infile()
 
 	responses := make(chan maybe)
 	go streamValues(conn, responses)
 
 	c := make(chan maybe)
-	go streamValues(infile, c)
+	go streamValues(f, c)
 
 	w := bufio.NewWriterSize(conn, 16384)
 
