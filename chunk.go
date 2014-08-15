@@ -4,8 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 )
+
+var chunk_id struct {
+	sync.Mutex
+	val int
+}
 
 // type chunk represents a grouping of redis statements to be sent to a redis
 // server.
@@ -13,6 +19,15 @@ type chunk struct {
 	id   int
 	vals []value
 	t    time.Time
+}
+
+// creates a new chunk of a given size, automatically assigning it a
+// monotomically increasing id.
+func newChunk(size int) *chunk {
+	chunk_id.Lock()
+	defer chunk_id.Unlock()
+	chunk_id.val++
+	return &chunk{id: chunk_id.val, vals: make([]value, 0, size)}
 }
 
 // write out a chunk's statements onto a bufio.Writer.  After sending all

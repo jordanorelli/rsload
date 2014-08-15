@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-var chunk_size = 1
 var chunk_target = 250 * time.Millisecond
 var chunk_max = 10000
 
@@ -96,16 +95,15 @@ func main() {
 
 	f := infile()
 
-	responses := make(chan maybe)
+	responses := make(chan maybe, chunk_max)
 	go streamValues(conn, responses)
 
-	c := make(chan maybe)
+	c := make(chan maybe, chunk_max)
 	go streamValues(f, c)
 
 	w := bufio.NewWriterSize(conn, 16384)
 
-	id := 1
-	requests := &chunk{id: id, vals: make([]value, 0, chunk_size)}
+	requests := newChunk(1)
 	errors, replies := 0, 0
 	for m := range c {
 		if !m.ok() {
@@ -119,8 +117,7 @@ func main() {
 			errors += stats.errors
 			replies += stats.replies
 			time.Sleep(time.Duration(float64(stats.elapsed) * 0.1))
-			id++
-			requests = &chunk{id: id, vals: make([]value, 0, stats.nextSize())}
+			requests = newChunk(stats.nextSize())
 		}
 	}
 	if len(requests.vals) > 0 {
