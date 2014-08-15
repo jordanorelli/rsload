@@ -18,7 +18,6 @@ var options struct {
 	host      string
 	port      int
 	password  string
-	buffer    int
 	pipe      bool
 	profile   string
 	verbose   bool
@@ -246,7 +245,6 @@ func init() {
 	flag.StringVar(&options.host, "h", "127.0.0.1", "hostname")
 	flag.IntVar(&options.port, "p", 6379, "port")
 	flag.StringVar(&options.password, "a", "", "password")
-	flag.IntVar(&options.buffer, "buffer", 0, "number of outstanding statements allowed before throttling")
 	flag.BoolVar(&options.pipe, "pipe", false, "transfers input from stdin to server")
 	flag.StringVar(&options.profile, "profile", "", "pprof file output for performance debugging")
 	flag.BoolVar(&options.verbose, "v", false, "verbose mode (prints all requests and responses)")
