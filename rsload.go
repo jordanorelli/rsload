@@ -11,7 +11,7 @@ import (
 )
 
 var chunk_target = 250 * time.Millisecond
-var chunk_max = 10000
+var chunk_max = 1000
 
 var options struct {
 	host      string // hostname or ip address of the redis server to connect to
@@ -116,7 +116,7 @@ func main() {
 			stats.log()
 			errors += stats.errors
 			replies += stats.replies
-			time.Sleep(time.Duration(float64(stats.elapsed) * 0.1))
+			time.Sleep(time.Duration(float64(stats.elapsed) * 0.3))
 			requests = newChunk(stats.nextSize())
 		}
 	}
