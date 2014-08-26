@@ -11,7 +11,7 @@ import (
 )
 
 var chunk_target = 250 * time.Millisecond
-var chunk_max = 250
+var chunk_max = 500
 
 var options struct {
 	host      string // hostname or ip address of the redis server to connect to
