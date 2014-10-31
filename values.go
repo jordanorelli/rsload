@@ -93,7 +93,7 @@ func readValue(r io.Reader) (value, error) {
 	case nil:
 		break
 	default:
-		return nil, fmt.Errorf("unable to read value in redis protocol: %v")
+		return nil, fmt.Errorf("unable to read value in redis protocol: %v", err)
 	}
 
 	if len(line) < 3 {
