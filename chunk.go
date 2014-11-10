@@ -100,7 +100,7 @@ func (s *sendResult) log() {
 
 func (s *sendResult) nextSize() int {
 	target := int(int64(chunk_target) / int64(s.avg()))
-	return min(target, chunk_max, 2*s.read)
+	return min(target, options.chunkMax, 2*s.read)
 }
 
 func (s *sendResult) accumulate(request value, response maybe) {

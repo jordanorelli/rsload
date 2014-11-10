@@ -11,16 +11,18 @@ import (
 )
 
 var chunk_target = 250 * time.Millisecond
-var chunk_max = 500
 
 var options struct {
-	host      string // hostname or ip address of the redis server to connect to
-	port      int    // redis port to connect to
-	password  string // redis password used with redis auth
-	pipe      bool   // whether or not to take input from stdin
-	profile   string // path to which a cpu profile will be written, used for debug purposes
-	verbose   bool   // whether or not to echo out request/response pairs
-	chunkInfo bool   // whether or not to write out stats about each chunk sent
+	host      string  // hostname or ip address of the redis server to connect to
+	port      int     // redis port to connect to
+	password  string  // redis password used with redis auth
+	pipe      bool    // whether or not to take input from stdin
+	profile   string  // path to which a cpu profile will be written, used for debug purposes
+	verbose   bool    // whether or not to echo out request/response pairs
+	chunkInfo bool    // whether or not to write out stats about each chunk sent
+	chunkMax  int     // size of the maximum chunk to send
+	duty      float64 // duty cycle. 1.0 means never ever pause, 0.5 means take 50% of redis' time.
+
 }
 
 func usage(status int) {
@@ -95,10 +97,10 @@ func main() {
 
 	f := infile()
 
-	responses := make(chan maybe, chunk_max)
+	responses := make(chan maybe, options.chunkMax)
 	go streamValues(conn, responses)
 
-	c := make(chan maybe, chunk_max)
+	c := make(chan maybe, options.chunkMax)
 	go streamValues(f, c)
 
 	w := bufio.NewWriterSize(conn, 16384)
@@ -116,7 +118,7 @@ func main() {
 			stats.log()
 			errors += stats.errors
 			replies += stats.replies
-			time.Sleep(time.Duration(float64(stats.elapsed) * 0.3))
+			time.Sleep(time.Duration(float64(stats.elapsed) * (1.0 - options.duty)))
 			requests = newChunk(stats.nextSize())
 		}
 	}
@@ -139,6 +141,12 @@ func init() {
 	flag.StringVar(&options.profile, "profile", "", "pprof file output for performance debugging")
 	flag.BoolVar(&options.verbose, "v", false, "verbose mode (prints all requests and responses)")
 	flag.BoolVar(&options.chunkInfo, "chunk-info", false, "show chunk info")
+	flag.IntVar(&options.chunkMax, "chunk-max", 500, "maximum chunk size to send to redis")
+	flag.Float64Var(&options.duty, "duty", 0.7, "redis duty level")
+	if options.duty < 0.0 || options.duty > 1.0 {
+		fmt.Fprintf(os.Stderr, "invalid duty: %v.  duty must be between 0.0 and 1.0", options.duty)
+		os.Exit(1)
+	}
 }
 
 /*
